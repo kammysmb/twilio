@@ -3,8 +3,10 @@
 namespace NotificationChannels\Twilio\Tests\Unit;
 
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Translation\MessageSelector;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryTestCase;
+use NotificationChannels\Twilio\Events\TwilioResponseReceived;
 use NotificationChannels\Twilio\Exceptions\CouldNotSendNotification;
 use NotificationChannels\Twilio\Twilio;
 use NotificationChannels\Twilio\TwilioCallMessage;
@@ -316,6 +318,60 @@ class TwilioTest extends MockeryTestCase
             ])
             ->andReturn(Mockery::mock(MessageInstance::class));
 
+        $this->twilio->sendMessage($message, '+1111111111');
+    }
+
+    /** @test */
+    public function it_can_dispatch_an_event_with_twilio_sms_message()
+    {
+        // Create an instance of TwilioSmsMessage
+        $message = new TwilioSmsMessage('Message text');
+        $response = Mockery::mock(MessageInstance::class); // Mock the MessageInstance
+
+        $dispatcher = Mockery::mock(Dispatcher::class); // Mock the Dispatcher
+
+        // Pass the mocked dispatcher into the Twilio instance
+        $this->twilio = new Twilio($this->twilioService, $this->config, $dispatcher);
+
+        // Mock configuration methods as usual
+        $this->config->shouldReceive('getFrom')
+            ->once()
+            ->andReturn('+1234567890');
+
+        $this->config->shouldReceive('getDebugTo')
+            ->once()
+            ->andReturn(null);
+
+        $this->config->shouldReceive('isShortenUrlsEnabled')
+            ->once()
+            ->andReturn(false);
+
+        $this->config->shouldReceive('getServiceSid')
+            ->once()
+            ->andReturn(null);
+
+        $this->twilioService->messages
+            ->shouldReceive('create')
+            ->once()
+            ->with('+1111111111', [
+                'from' => '+1234567890',
+                'body' => 'Message text',
+            ])
+            ->andReturn($response);
+
+        // Define the expectation for the dispatch method
+        $dispatcher->shouldReceive('dispatch')
+            ->once()
+            ->with(Mockery::on(function ($event) use ($response) {
+                // Check that the event is an instance of the correct class
+                // and contains the correct type and response
+                return $event instanceof TwilioResponseReceived &&
+                    $event->type === 'message' && // Ensure type matches ('sms' or 'message')
+                    $event->response === $response;
+            }))
+            ->andReturnNull(); // Return null since dispatch typically has no return value
+
+        // Call the sendMessage method and pass in the arguments
         $this->twilio->sendMessage($message, '+1111111111');
     }
 }

@@ -1,6 +1,6 @@
 {
-    "name": "laravel-notification-channels/twilio",
-    "description": "Provides Twilio notification channel for Laravel",
+    "name": "kammysmb/twilio",
+    "description": "Provides Twilio notification channel for Laravel - LHSS Update",
     "keywords": [
         "laravel",
         "twilio",

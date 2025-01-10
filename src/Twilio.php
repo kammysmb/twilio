@@ -2,6 +2,8 @@
 
 namespace NotificationChannels\Twilio;
 
+use Illuminate\Contracts\Events\Dispatcher;
+use NotificationChannels\Twilio\Events\TwilioResponseReceived;
 use NotificationChannels\Twilio\Exceptions\CouldNotSendNotification;
 use Twilio\Exceptions\TwilioException;
 use Twilio\Rest\Api\V2010\Account\CallInstance;
@@ -12,7 +14,8 @@ class Twilio
 {
     public function __construct(
         protected TwilioService $twilioService,
-        public TwilioConfig $config
+        public TwilioConfig     $config,
+        protected ?Dispatcher   $events = null,
     ) {}
 
     /**
@@ -89,7 +92,9 @@ class Twilio
             ]);
         }
 
-        return $this->twilioService->messages->create($to, $params);
+        $response = $this->twilioService->messages->create($to, $params);
+        $this->events?->dispatch(new TwilioResponseReceived('message', $response));
+        return $response;
     }
 
     /**
@@ -124,11 +129,9 @@ class Twilio
             throw CouldNotSendNotification::missingFrom();
         }
 
-        return $this->twilioService->calls->create(
-            $to,
-            $from,
-            $params
-        );
+        $response = $this->twilioService->calls->create($to, $from, $params);
+        $this->events?->dispatch(new TwilioResponseReceived('call', $response));
+        return $response;
     }
 
     /**
