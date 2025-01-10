@@ -93,7 +93,7 @@ class Twilio
         }
 
         $response = $this->twilioService->messages->create($to, $params);
-        $this->events?->dispatch(new TwilioResponseReceived('message', $response));
+        $this->events?->dispatch(new TwilioResponseReceived('message', $response, $message->notification));
         return $response;
     }
 
