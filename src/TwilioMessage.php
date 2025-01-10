@@ -17,7 +17,8 @@ abstract class TwilioMessage
      * Create a new message instance.
      */
     public function __construct(
-        public string $content = ''
+        public string $content = '',
+        public mixed $notification = null
     ) {}
 
     /**

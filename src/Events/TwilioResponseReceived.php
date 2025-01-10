@@ -15,9 +15,11 @@ class TwilioResponseReceived
      *
      * @param string $type
      * @param mixed $response
+     * @param mixed|null $notification
      */
     public function __construct(
         public string $type,
-        public mixed $response
+        public mixed $response,
+        public mixed $notification = null
     ) {}
 }
